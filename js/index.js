@@ -97,10 +97,15 @@ var ImageModule = function () {
 			if (this.options.setParser) {
 				return this.options.setParser(placeHolderContent);
 			}
-			if (placeHolderContent.substring(0, 2) === "%%") {
+			if (placeHolderContent.substring(0, 2) === "%%" && placeHolderContent.indexOf("|") > 0) {
+				return { type: type, value: placeHolderContent.substr(2, placeHolderContent.indexOf("|") - 3), module: module, centered: true };
+			} else if (placeHolderContent.substring(0, 2) === "%%") {
 				return { type: type, value: placeHolderContent.substr(2), module: module, centered: true };
 			}
-			if (placeHolderContent.substring(0, 1) === "%") {
+
+			if (placeHolderContent.substring(0, 1) === "%" && placeHolderContent.indexOf("|") > 0) {
+				return { type: type, value: placeHolderContent.substr(1, placeHolderContent.indexOf("|") - 2), module: module, centered: false };
+			} else if (placeHolderContent.substring(0, 1) === "%") {
 				return { type: type, value: placeHolderContent.substr(1), module: module, centered: false };
 			}
 			return null;
@@ -128,16 +133,21 @@ var ImageModule = function () {
 			var tagValue = options.scopeManager.getValue(part.value, {
 				part: part
 			});
+
+			var tag_name = part.raw.replace(/(")/g, "").replace(/(”)/g, "").trim();
+
+			var image_size = tag_name.substr(tag_name.indexOf("size") + 5, tag_name.length).split(",", 2);
+
 			if (!tagValue) {
 				return { value: this.fileTypeConfig.tagTextXml };
 			} else if ((typeof tagValue === "undefined" ? "undefined" : _typeof(tagValue)) === "object") {
 				return this.getRenderedPart(part, tagValue.rId, tagValue.sizePixel);
 			}
-			
+
 			var imgManager = new ImgManager(this.zip, options.filePath, this.xmlDocuments, this.fileType);
 			var imgBuffer = this.options.getImage(tagValue, part.value);
 			var rId = imgManager.addImageRels(this.getNextImageName(), imgBuffer);
-			var sizePixel = this.options.getSize(imgBuffer, tagValue, part.value);
+			var sizePixel = this.options.getSize(imgBuffer, tagValue, part.value, image_size);
 			return this.getRenderedPart(part, rId, sizePixel);
 		}
 	}, {

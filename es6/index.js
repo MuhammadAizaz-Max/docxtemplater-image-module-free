@@ -69,10 +69,16 @@ class ImageModule {
 		if (this.options.setParser) {
 			return this.options.setParser(placeHolderContent);
 		}
-		if (placeHolderContent.substring(0, 2) === "%%") {
+		if (placeHolderContent.substring(0, 2) === "%%" && placeHolderContent.indexOf("|") > 0) {
+			return {type, value: placeHolderContent.substr(2, placeHolderContent.indexOf("|") - 3), module, centered: true};
+		}
+		else if (placeHolderContent.substring(0, 2) === "%%") {
 			return {type, value: placeHolderContent.substr(2), module, centered: true};
 		}
-		if (placeHolderContent.substring(0, 1) === "%") {
+		if (placeHolderContent.substring(0, 1) === "%" && placeHolderContent.indexOf("|") > 0) {
+			return {type, value: placeHolderContent.substr(1, placeHolderContent.indexOf("|") - 2), module, centered: false};
+		}
+		else if (placeHolderContent.substring(0, 1) === "%") {
 			return {type, value: placeHolderContent.substr(1), module, centered: false};
 		}
 		return null;
@@ -97,6 +103,8 @@ class ImageModule {
 		const tagValue = options.scopeManager.getValue(part.value, {
 			part: part,
 		});
+		const tagName = part.raw.replace(/(")/g, "").replace(/(”)/g, "").trim();
+		const imageSize = tagName.substr(tagName.indexOf("size") + 5, tagName.length).split(",", 2);
 		if (!tagValue) {
 			return {value: this.fileTypeConfig.tagTextXml};
 		}
@@ -106,7 +114,7 @@ class ImageModule {
 		const imgManager = new ImgManager(this.zip, options.filePath, this.xmlDocuments, this.fileType);
 		const imgBuffer = this.options.getImage(tagValue, part.value);
 		const rId = imgManager.addImageRels(this.getNextImageName(), imgBuffer);
-		const sizePixel = this.options.getSize(imgBuffer, tagValue, part.value);
+		const sizePixel = this.options.getSize(imgBuffer, tagValue, part.value, imageSize);
 		return this.getRenderedPart(part, rId, sizePixel);
 	}
 	resolve(part, options) {
